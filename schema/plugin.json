@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "jupyterlab-quick-share",
+  "description": "jupyterlab-quick-share settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}

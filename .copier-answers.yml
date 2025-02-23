@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.3.8
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: joshua.bronson@chicagotrading.com
+author_name: Joshua Bronson
+has_binder: false
+has_settings: true
+kind: server
+labextension_name: jupyterlab-quick-share
+project_short_description: Send/receive links that make it easy to share notebooks
+    (and other files)
+python_name: jupyterlab_quick_share
+repository: https://github.com/ctcjab/jupyterlab-quick-share
+test: true
+
