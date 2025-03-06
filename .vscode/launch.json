@@ -10,7 +10,6 @@
             "type": "python",
             "request": "launch",
             "args": [
-                "--notebook-dir=notebooks",
                 "--no-browser",
                 "--ServerApp.token=''",
                 "--port=9999"

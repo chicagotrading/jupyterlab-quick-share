@@ -3,6 +3,13 @@
   "title": "jupyterlab-quick-share",
   "description": "jupyterlab-quick-share settings.",
   "type": "object",
-  "properties": {},
+  "properties": {
+    "private": {
+      "default": {},
+      "description": "",
+      "title": "",
+      "type": "object"
+    }
+  },
   "additionalProperties": false
 }
