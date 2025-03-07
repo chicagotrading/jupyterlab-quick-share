@@ -1,6 +1,6 @@
 {
     "name": "jupyterlab-quick-share",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Send/receive links that make it easy to share notebooks (and other files)",
     "keywords": [
         "jupyter",
