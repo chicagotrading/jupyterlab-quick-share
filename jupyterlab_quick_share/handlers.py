@@ -11,6 +11,7 @@ import time
 import typing as t
 from dataclasses import asdict
 from dataclasses import dataclass
+from functools import partial
 from string import Template
 
 from jupyter_server.base.handlers import APIHandler
@@ -59,27 +60,29 @@ class UrlData:
     sha: str
 
 
-def _url_data_from_path(path_: str) -> UrlData:
-    path = pathlib.Path(path_).resolve()
-    clone_dir = path.parent
+def _url_data_from_path(path: str, exc_tp: t.Type[Exception] = Exception) -> UrlData:
+    abs_path = pathlib.Path(path).resolve()
+    clone_dir = abs_path.parent
     while not clone_dir.joinpath(".git").is_dir():
+        if clone_dir == clone_dir.parent:  # reached /
+            raise exc_tp(f"No .git directory found above {abs_path}")
         clone_dir = clone_dir.parent
-        if clone_dir == clone_dir.root:
-            raise Exception(f"No .git directory found in {path}")
-    rel_path = path.relative_to(clone_dir)
+    rel_path = abs_path.relative_to(clone_dir)
     git_cmd = ("git", "-C", shlex.quote(str(clone_dir)))
-    status = subprocess.check_output((*git_cmd, "status", "--porcelain", str(rel_path)), text=True).strip()
-    if status:
-        raise Exception(f"File {rel_path} has unclean status {status}")
+    # Use abs_path to help git realize when a file is untracked (e.g. git won't traverse symlinks)
+    try:
+        assert not subprocess.check_output((*git_cmd, "status", "--porcelain", str(abs_path)), text=True).strip()
+    except Exception:
+        raise exc_tp(f"File {rel_path} has uncommitted changes or is untracked")
     sha = subprocess.check_output((*git_cmd, "rev-parse", "HEAD"), text=True).strip()
     repo_url = subprocess.check_output((*git_cmd, "remote", "get-url", "origin"), text=True).strip()
     parsed_url = urllib.parse.urlparse(repo_url)
     assert parsed_url.hostname
     pat = settings["configByHost"].get(parsed_url.hostname, {}).get("originUrlPat")
     if not pat:
-        raise Exception(f"Unsupported host {parsed_url.hostname}")
+        raise exc_tp(f"Unsupported host {parsed_url.hostname}")
     if not (match := re.match(pat, repo_url)):
-        raise Exception(f"repo_url {repo_url} does not match pattern {pat}")
+        raise exc_tp(f"repo_url {repo_url} does not match pattern {pat}")
     return UrlData(host=parsed_url.hostname, org=match["org"], repo=match["repo"], path=str(rel_path), sha=sha)
 
 
@@ -87,7 +90,7 @@ class ShareHandler(APIHandler):
     @tornado.web.authenticated
     async def get(self):
         path = self.get_query_argument("path")
-        data = _url_data_from_path(path)
+        data = _url_data_from_path(path, exc_tp=partial(tornado.web.HTTPError, 400))
         rawUrlTmpl = settings["configByHost"].get(data.host, {}).get("rawUrlTmpl")
         if not rawUrlTmpl:
             raise tornado.web.HTTPError(400, reason=f"Unsupported host {data.host}")
