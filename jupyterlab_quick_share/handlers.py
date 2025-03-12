@@ -75,6 +75,10 @@ def _url_data_from_path(path: str, exc_tp: t.Type[Exception] = Exception) -> Url
     except Exception:
         raise exc_tp(f"File {rel_path} has uncommitted changes or is untracked")
     sha = subprocess.check_output((*git_cmd, "rev-parse", "HEAD"), text=True).strip()
+    try:
+        subprocess.check_call((*git_cmd, "merge-base", "--is-ancestor", sha, r"@{u}"))
+    except subprocess.CalledProcessError:
+        raise exc_tp(f"Commit {sha[:7]} has not been pushed to the remote")
     repo_url = subprocess.check_output((*git_cmd, "remote", "get-url", "origin"), text=True).strip()
     parsed_url = urllib.parse.urlparse(repo_url)
     assert parsed_url.hostname
