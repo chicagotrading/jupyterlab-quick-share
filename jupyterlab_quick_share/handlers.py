@@ -17,7 +17,7 @@ from string import Template
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.serverapp import ServerWebApplication
-from jupyter_server.utils import url_path_join
+from jupyter_server.utils import url_path_join as ujoin
 import requests
 import tornado
 
@@ -101,15 +101,15 @@ class ShareHandler(APIHandler):
         if not rawUrlTmpl:
             raise tornado.web.HTTPError(400, reason=f"Unsupported host {data.host}")
         raw_url = Template(rawUrlTmpl).substitute(asdict(data))
-        open_url = f"{self.base_url}{EXTENSION_NAME}/open?url={urllib.parse.quote(raw_url)}"
+        open_url = f"{EXTENSION_NAME}/open?url={urllib.parse.quote(raw_url)}"
         # TODO: Is there an API we can call from here like
         # https://github.com/jupyterlab/jupyterlab/blob/431405/packages/coreutils/src/pageconfig.ts#L120
         # to get page_config["shareUrl"], as set here:
         # https://github.com/jupyterlab/jupyterlab/blob/431405e2/jupyterlab/labapp.py#L905
         # rather than resorting to this code:
-        if hub_base_url := os.environ.get("JUPYTERHUB_BASE_URL", ""):
-            open_url = url_path_join(hub_base_url, "user-redirect", open_url)
-        open_url = f"{self.request.protocol}://{self.request.host}{open_url}"
+        if os.environ.get("JUPYTERHUB_BASE_URL", ""):
+            open_url = ujoin("hub/user-redirect", open_url)
+        open_url = ujoin(f"{self.request.protocol}://{self.request.host}", open_url)
         self.finish(json.dumps({"url": open_url}))
 
 
@@ -179,7 +179,7 @@ def setup_handlers(web_app: ServerWebApplication) -> None:
     host_pattern = ".*$"
     base_url = web_app.settings["base_url"]
     handlers = [
-        (url_path_join(base_url, EXTENSION_NAME, "share"), ShareHandler),
-        (url_path_join(base_url, EXTENSION_NAME, "open"), OpenHandler),
+        (ujoin(base_url, EXTENSION_NAME, "share"), ShareHandler),
+        (ujoin(base_url, EXTENSION_NAME, "open"), OpenHandler),
     ]
     web_app.add_handlers(host_pattern, handlers)
