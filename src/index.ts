@@ -1,6 +1,6 @@
 import { ILabShell, JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
 import { showErrorMessage } from '@jupyterlab/apputils';
-import { IDefaultFileBrowser } from '@jupyterlab/filebrowser';
+import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { shareIcon } from '@jupyterlab/ui-components';
 import { requestAPI } from './handler';
@@ -9,8 +9,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-quick-share:plugin',
   description: 'Send/receive links that make it easy to share notebooks (and other files)',
   autoStart: true,
-  requires: [IDefaultFileBrowser, ISettingRegistry],
-  activate: async (app: JupyterFrontEnd, fileBrowser: IDefaultFileBrowser, settingRegistry: ISettingRegistry) => {
+  requires: [IFileBrowserFactory, ISettingRegistry],
+  activate: async (app: JupyterFrontEnd, factory: IFileBrowserFactory, settingRegistry: ISettingRegistry) => {
     console.log('JupyterLab extension jupyterlab-quick-share is activated!');
 
     const settings = (await settingRegistry.load(plugin.id)).composite.private as any;
@@ -18,18 +18,19 @@ const plugin: JupyterFrontEndPlugin<void> = {
       fixJupytextIssue1344(app);
     }
 
+    const { tracker } = factory;
     app.commands.addCommand('jupyterlab-quick-share:share', {
       label: 'Copy Quick Share Link',
       icon: shareIcon,
+      isVisible: () => !!tracker.currentWidget && Array.from(tracker.currentWidget.selectedItems()).length === 1,
       execute: async () => {
-        const itemsIter = fileBrowser.selectedItems();
-        const selectedFile = itemsIter.next().value;
-        if (itemsIter.next().value) {
-          showErrorMessage('Quick Share Failed', 'Only one file can be shared at a time');
+        const widget = tracker.currentWidget;
+        if (!widget) {
           return;
         }
+        const selectedFile = widget.selectedItems().next().value.path;
         try {
-          const data = await requestAPI<any>(`share?path=${encodeURIComponent(selectedFile.path)}`);
+          const data = await requestAPI<any>(`share?path=${encodeURIComponent(selectedFile)}`);
           await navigator.clipboard.writeText(data.url);
           console.log('Copied to clipboard:', data.url);
         } catch (error) {
