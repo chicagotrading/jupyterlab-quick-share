@@ -101,14 +101,16 @@ class ShareHandler(APIHandler):
         if not rawUrlTmpl:
             raise tornado.web.HTTPError(400, reason=f"Unsupported host {data.host}")
         raw_url = Template(rawUrlTmpl).substitute(asdict(data))
-        open_url = ujoin(self.base_url, f"{EXTENSION_NAME}/open?url={urllib.parse.quote(raw_url)}")
+        open_url = f"{EXTENSION_NAME}/open?url={urllib.parse.quote(raw_url)}"
         # TODO: Is there an API we can call from here like
         # https://github.com/jupyterlab/jupyterlab/blob/431405/packages/coreutils/src/pageconfig.ts#L120
         # to get page_config["shareUrl"], as set here:
         # https://github.com/jupyterlab/jupyterlab/blob/431405e2/jupyterlab/labapp.py#L905
         # rather than resorting to this code:
         if os.environ.get("JUPYTERHUB_BASE_URL", ""):
-            open_url = ujoin("hub/user-redirect/lab", open_url)
+            open_url = ujoin("hub/user-redirect", open_url)
+        else:
+            open_url = ujoin(self.base_url, open_url)
         open_url = ujoin(f"{self.request.protocol}://{self.request.host}", open_url)
         self.finish(json.dumps({"url": open_url}))
 
