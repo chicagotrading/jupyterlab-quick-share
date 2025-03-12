@@ -133,7 +133,8 @@ class OpenHandler(APIHandler):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
         logger.info("Downloaded %s to %s", url, path)
-        self.redirect(f"/lab/tree/{str(path).lstrip("/")}")
+        redir_url = ujoin(self.base_url, "lab/tree", str(path))
+        self.redirect(redir_url)
 
 
 def _get_content(parsed_url: urllib.parse.ParseResult, config: dict) -> bytes | None:
