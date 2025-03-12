@@ -2,6 +2,7 @@ from __future__ import annotations
 import functools
 import json
 import logging
+import os
 import pathlib
 import re
 import shlex
@@ -15,6 +16,7 @@ from functools import partial
 from string import Template
 
 from jupyter_server.base.handlers import APIHandler
+from jupyter_server.serverapp import ServerWebApplication
 from jupyter_server.utils import url_path_join
 import requests
 import tornado
@@ -99,8 +101,16 @@ class ShareHandler(APIHandler):
         if not rawUrlTmpl:
             raise tornado.web.HTTPError(400, reason=f"Unsupported host {data.host}")
         raw_url = Template(rawUrlTmpl).substitute(asdict(data))
-        url = f"{self.request.protocol}://{self.request.host}{self.base_url}{EXTENSION_NAME}/open?url={urllib.parse.quote(raw_url)}"
-        self.finish(json.dumps({"url": url}))
+        open_url = f"{self.base_url}{EXTENSION_NAME}/open?url={urllib.parse.quote(raw_url)}"
+        # TODO: Is there an API we can call from here like
+        # https://github.com/jupyterlab/jupyterlab/blob/431405/packages/coreutils/src/pageconfig.ts#L120
+        # to get page_config["shareUrl"], as set here:
+        # https://github.com/jupyterlab/jupyterlab/blob/431405e2/jupyterlab/labapp.py#L905
+        # rather than resorting to this code:
+        if hub_base_url := os.environ.get("JUPYTERHUB_BASE_URL", ""):
+            open_url = url_path_join(hub_base_url, "user-redirect", open_url)
+        open_url = f"{self.request.protocol}://{self.request.host}{open_url}"
+        self.finish(json.dumps({"url": open_url}))
 
 
 class OpenHandler(APIHandler):
@@ -165,7 +175,7 @@ def _creds_from_git_store(protocol: str, host: str) -> tuple[str, str]:
     return username, password
 
 
-def setup_handlers(web_app):
+def setup_handlers(web_app: ServerWebApplication) -> None:
     host_pattern = ".*$"
     base_url = web_app.settings["base_url"]
     handlers = [
