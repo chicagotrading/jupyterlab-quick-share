@@ -76,6 +76,11 @@ def _url_data_from_path(path: str, exc_tp: t.Type[Exception] = Exception) -> Url
         assert not subprocess.check_output(check_uncommitted_cmd, text=True).strip()
     except Exception:
         raise exc_tp(f"File {rel_path} has uncommitted changes or is untracked")
+    check_tracking_remote_cmd = (*git_cmd_pfx, "rev-parse", "--abbrev-ref", "--symbolic-full-name", r"@{u}")
+    try:
+        subprocess.check_call(check_tracking_remote_cmd)
+    except subprocess.CalledProcessError:
+        raise exc_tp("Must be on a branch that is tracking a remote branch")
     sha = subprocess.check_output((*git_cmd_pfx, "rev-parse", "HEAD"), text=True).strip()
     check_unpushed_cmd = (*git_cmd_pfx, "merge-base", "--is-ancestor", sha, r"@{u}")
     try:
