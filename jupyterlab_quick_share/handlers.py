@@ -70,18 +70,20 @@ def _url_data_from_path(path: str, exc_tp: t.Type[Exception] = Exception) -> Url
             raise exc_tp(f"No .git directory found above {abs_path}")
         clone_dir = clone_dir.parent
     rel_path = abs_path.relative_to(clone_dir)
-    git_cmd = ("git", "-C", shlex.quote(str(clone_dir)))
-    # Use abs_path to help git realize when a file is untracked (e.g. git won't traverse symlinks)
+    git_cmd_pfx = ("git", "-C", shlex.quote(str(clone_dir)))
+    check_uncommitted_cmd = (*git_cmd_pfx, "status", "--porcelain", str(abs_path))  # Use abs_path to help git realize when a file is untracked (e.g. git won't traverse symlinks)
     try:
-        assert not subprocess.check_output((*git_cmd, "status", "--porcelain", str(abs_path)), text=True).strip()
+        assert not subprocess.check_output(check_uncommitted_cmd, text=True).strip()
     except Exception:
         raise exc_tp(f"File {rel_path} has uncommitted changes or is untracked")
-    sha = subprocess.check_output((*git_cmd, "rev-parse", "HEAD"), text=True).strip()
+    sha = subprocess.check_output((*git_cmd_pfx, "rev-parse", "HEAD"), text=True).strip()
+    check_unpushed_cmd = (*git_cmd_pfx, "merge-base", "--is-ancestor", sha, r"@{u}")
     try:
-        subprocess.check_call((*git_cmd, "merge-base", "--is-ancestor", sha, r"@{u}"))
+        subprocess.check_call(check_unpushed_cmd)
     except subprocess.CalledProcessError:
         raise exc_tp(f"Commit {sha[:7]} has not been pushed to the remote")
-    repo_url = subprocess.check_output((*git_cmd, "remote", "get-url", "origin"), text=True).strip()
+    repo_url_cmd = (*git_cmd_pfx, "remote", "get-url", "origin")
+    repo_url = subprocess.check_output(repo_url_cmd, text=True).strip()
     parsed_url = urllib.parse.urlparse(repo_url)
     assert parsed_url.hostname
     pat = settings["configByHost"].get(parsed_url.hostname, {}).get("originUrlPat")
