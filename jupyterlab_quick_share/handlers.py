@@ -75,18 +75,18 @@ def _url_data_from_path(path: str, exc_tp: t.Type[Exception] = Exception) -> Url
     try:
         assert not subprocess.check_output(check_uncommitted_cmd, text=True).strip()
     except Exception:
-        raise exc_tp(f"File {rel_path} has uncommitted changes or is untracked")
+        raise exc_tp(f"File {rel_path} has uncommitted changes or is untracked") from None
     check_tracking_remote_cmd = (*git_cmd_pfx, "rev-parse", "--abbrev-ref", "--symbolic-full-name", r"@{u}")
     try:
         subprocess.check_call(check_tracking_remote_cmd)
     except subprocess.CalledProcessError:
-        raise exc_tp("Must be on a branch that is tracking a remote branch")
+        raise exc_tp("Must be on a branch that is tracking a remote branch") from None
     sha = subprocess.check_output((*git_cmd_pfx, "rev-parse", "HEAD"), text=True).strip()
     check_unpushed_cmd = (*git_cmd_pfx, "merge-base", "--is-ancestor", sha, r"@{u}")
     try:
         subprocess.check_call(check_unpushed_cmd)
     except subprocess.CalledProcessError:
-        raise exc_tp(f"Commit {sha[:7]} has not been pushed to the remote")
+        raise exc_tp(f"Commit {sha[:7]} has not been pushed to the remote") from None
     repo_url_cmd = (*git_cmd_pfx, "remote", "get-url", "origin")
     repo_url = subprocess.check_output(repo_url_cmd, text=True).strip()
     parsed_url = urllib.parse.urlparse(repo_url)
