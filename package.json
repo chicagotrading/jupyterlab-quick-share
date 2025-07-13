@@ -7,9 +7,9 @@
         "jupyterlab",
         "jupyterlab-extension"
     ],
-    "homepage": "https://github.com/ctcjab/jupyterlab-quick-share",
+    "homepage": "https://github.com/chicagotrading/jupyterlab-quick-share",
     "bugs": {
-        "url": "https://github.com/ctcjab/jupyterlab-quick-share/issues"
+        "url": "https://github.com/chicagotrading/jupyterlab-quick-share/issues"
     },
     "license": "BSD-3-Clause",
     "author": {
@@ -27,7 +27,7 @@
     "style": "style/index.css",
     "repository": {
         "type": "git",
-        "url": "https://github.com/ctcjab/jupyterlab-quick-share.git"
+        "url": "https://github.com/chicagotrading/jupyterlab-quick-share.git"
     },
     "scripts": {
         "build": "jlpm build:lib && jlpm build:labextension:dev",

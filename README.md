@@ -1,6 +1,6 @@
 # jupyterlab_quick_share
 
-[![Github Actions Status](https://github.com/ctcjab/jupyterlab-quick-share/workflows/Build/badge.svg)](https://github.com/ctcjab/jupyterlab-quick-share/actions/workflows/build.yml)
+[![Github Actions Status](https://github.com/chicagotrading/jupyterlab-quick-share/workflows/Build/badge.svg)](https://github.com/chicagotrading/jupyterlab-quick-share/actions/workflows/build.yml)
 
 Send/receive links that make it easy to share notebooks (and other files)
 
