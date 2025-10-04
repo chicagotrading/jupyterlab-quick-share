@@ -14,8 +14,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
     console.log('JupyterLab extension jupyterlab-quick-share is activated!');
 
     const settings = (await settingRegistry.load(plugin.id)).composite.private as any;
-    if (settings.enableJupytextIssue1344Fix) {
-      fixJupytextIssue1344(app);
+    if (settings.enableJupytextIssue1344Fix || settings.hideConsoleSection) {
+      customizeLauncher(app, settings);
     }
 
     const { tracker } = factory;
@@ -48,19 +48,23 @@ const plugin: JupyterFrontEndPlugin<void> = {
   }
 };
 
-function fixJupytextIssue1344(app: JupyterFrontEnd) {
+function customizeLauncher(app: JupyterFrontEnd, settings: any) {
   (app.shell as ILabShell).layoutModified.connect(() => {
     const container = document.querySelector('.jp-Launcher-content');
     if (!container) {
       return;
     }
     const launcherSectionTitles = document.querySelectorAll('.jp-Launcher-sectionTitle');
-    const jupytextSection = findLauncherSectionWithTitle('Jupytext', launcherSectionTitles);
-    if (!jupytextSection) {
-      return;
+    if (settings.hideConsoleSection) {
+      findLauncherSectionWithTitle('Console', launcherSectionTitles)?.remove();
     }
-    container.prepend(jupytextSection);
-    findLauncherSectionWithTitle('Notebook', launcherSectionTitles)?.remove();
+    if (settings.enableJupytextIssue1344Fix) {
+      const jupytextSection = findLauncherSectionWithTitle('Jupytext', launcherSectionTitles);
+      if (jupytextSection) {
+        container.prepend(jupytextSection);
+        findLauncherSectionWithTitle('Notebook', launcherSectionTitles)?.remove();
+      }
+    }
   });
 }
 
